@@ -48,6 +48,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -74,6 +75,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Repo.init(applicationContext)
+        MinecraftTextures.init(applicationContext)
         setContent {
             MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
                 Surface(Modifier.fillMaxSize()) { App() }
@@ -175,11 +177,10 @@ fun Builder(name: String, onBack: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Layers(s: Schematic) {
-    var layer by rememberSaveable { mutableIntStateOf(0) }
-    var total by rememberSaveable { mutableStateOf(false) }
-    val preview by produceState<Bitmap?>(null, s, layer) {
-        value = withContext(Dispatchers.Default) { Iso.render(s, 720, layer, layer) }
-    }
+    // Keep the Y index scoped to this schematic so another file cannot restore an invalid layer.
+    var layer by remember(s) { mutableIntStateOf(0) }
+    var sliderPosition by remember(s) { mutableFloatStateOf(0f) }
+    var total by remember(s) { mutableStateOf(false) }
     val here = remember(s, layer) { s.materials(layer) }
     val all by produceState(emptyList<Mat>(), s) { value = withContext(Dispatchers.Default) { s.materials(null) } }
     val shown = if (total) all else here
@@ -196,23 +197,32 @@ fun Layers(s: Schematic) {
             )
         }
         item {
-            preview?.let { Image(it.asImageBitmap(), "Isometric preview up to this layer", Modifier.fillMaxWidth().aspectRatio(1f)) }
+            InteractiveBlockViewer(s, layer)
         }
         item {
             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                OutlinedButton({ layer = max(0, layer - 1) }, enabled = layer > 0) { Text("◀ Prev") }
-                Text("Layer ${layer + 1} of ${s.sy}", fontWeight = FontWeight.Bold)
-                Button({ layer = min(s.sy - 1, layer + 1) }, enabled = layer < s.sy - 1) { Text("Next ▶") }
+                OutlinedButton({ layer = max(0, layer - 1); sliderPosition = layer.toFloat() }, enabled = layer > 0) { Text("◀ Prev") }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Layer ${layer + 1} of ${s.sy}", fontWeight = FontWeight.Bold)
+                    Text("Y = $layer", style = MaterialTheme.typography.labelSmall)
+                }
+                Button({ layer = min(s.sy - 1, layer + 1); sliderPosition = layer.toFloat() }, enabled = layer < s.sy - 1) { Text("Next ▶") }
             }
             if (s.sy > 1) {
-                Slider(layer.toFloat(), { layer = it.roundToInt() }, valueRange = 0f..(s.sy - 1).toFloat(), steps = s.sy - 2)
+                Slider(
+                    value = sliderPosition.coerceIn(0f, (s.sy - 1).toFloat()),
+                    onValueChange = {
+                        sliderPosition = it
+                        layer = it.roundToInt().coerceIn(0, s.sy - 1)
+                    },
+                    onValueChangeFinished = { sliderPosition = layer.toFloat() },
+                    valueRange = 0f..(s.sy - 1).toFloat(),
+                    steps = (s.sy - 2).coerceAtLeast(0),
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
-        item {
-            Text("Place these blocks (top-down, ↑ = north), grid lines every 5", style = MaterialTheme.typography.titleSmall)
-            Spacer(Modifier.size(6.dp))
-            Plan(s, layer)
-        }
+
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(!total, { total = false }, { Text("This layer") })
