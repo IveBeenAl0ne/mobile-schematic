@@ -176,8 +176,9 @@ fun Builder(name: String, onBack: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Layers(s: Schematic) {
-    var layer by rememberSaveable { mutableIntStateOf(0) }
-    var total by rememberSaveable { mutableStateOf(false) }
+    // Keep the Y index scoped to this schematic so another file cannot restore an invalid layer.
+    var layer by remember(s) { mutableIntStateOf(0) }
+    var total by remember(s) { mutableStateOf(false) }
     val preview by produceState<Bitmap?>(null, s, layer) {
         value = withContext(Dispatchers.Default) { Iso.render(s, 720, layer, layer) }
     }
@@ -202,11 +203,20 @@ fun Layers(s: Schematic) {
         item {
             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                 OutlinedButton({ layer = max(0, layer - 1) }, enabled = layer > 0) { Text("◀ Prev") }
-                Text("Layer ${layer + 1} of ${s.sy}", fontWeight = FontWeight.Bold)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Layer ${layer + 1} of ${s.sy}", fontWeight = FontWeight.Bold)
+                    Text("Y = $layer", style = MaterialTheme.typography.labelSmall)
+                }
                 Button({ layer = min(s.sy - 1, layer + 1) }, enabled = layer < s.sy - 1) { Text("Next ▶") }
             }
             if (s.sy > 1) {
-                Slider(layer.toFloat(), { layer = it.roundToInt() }, valueRange = 0f..(s.sy - 1).toFloat(), steps = s.sy - 2)
+                Slider(
+                    value = layer.toFloat(),
+                    onValueChange = { layer = it.roundToInt().coerceIn(0, s.sy - 1) },
+                    valueRange = 0f..(s.sy - 1).toFloat(),
+                    steps = (s.sy - 2).coerceAtLeast(0),
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
 
