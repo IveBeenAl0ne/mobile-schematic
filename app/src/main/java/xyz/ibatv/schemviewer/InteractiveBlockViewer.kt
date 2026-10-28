@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -83,11 +84,11 @@ fun InteractiveBlockViewer(s: Schematic, layer: Int) {
             FilterChip(selected = false, onClick = { zoom = 1f; pan = Offset.Zero }, label = { Text("Reset") })
         }
         Box(
-            Modifier.fillMaxWidth().height(340.dp)
+            Modifier.fillMaxWidth().height(340.dp).clipToBounds()
                 .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
         ) {
             Canvas(
-                Modifier.fillMaxSize()
+                Modifier.fillMaxSize().clipToBounds()
                     .pointerInput(view, s) {
                         detectTransformGestures { _, delta, scale, _ ->
                             zoom = (zoom * scale).coerceIn(.35f, 8f)
