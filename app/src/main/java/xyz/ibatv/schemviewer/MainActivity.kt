@@ -48,6 +48,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -178,6 +179,7 @@ fun Builder(name: String, onBack: () -> Unit) {
 fun Layers(s: Schematic) {
     // Keep the Y index scoped to this schematic so another file cannot restore an invalid layer.
     var layer by remember(s) { mutableIntStateOf(0) }
+    var sliderPosition by remember(s) { mutableFloatStateOf(0f) }
     var total by remember(s) { mutableStateOf(false) }
     val preview by produceState<Bitmap?>(null, s, layer) {
         value = withContext(Dispatchers.Default) { Iso.render(s, 720, layer, layer) }
@@ -202,17 +204,21 @@ fun Layers(s: Schematic) {
         }
         item {
             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                OutlinedButton({ layer = max(0, layer - 1) }, enabled = layer > 0) { Text("◀ Prev") }
+                OutlinedButton({ layer = max(0, layer - 1); sliderPosition = layer.toFloat() }, enabled = layer > 0) { Text("◀ Prev") }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Layer ${layer + 1} of ${s.sy}", fontWeight = FontWeight.Bold)
                     Text("Y = $layer", style = MaterialTheme.typography.labelSmall)
                 }
-                Button({ layer = min(s.sy - 1, layer + 1) }, enabled = layer < s.sy - 1) { Text("Next ▶") }
+                Button({ layer = min(s.sy - 1, layer + 1); sliderPosition = layer.toFloat() }, enabled = layer < s.sy - 1) { Text("Next ▶") }
             }
             if (s.sy > 1) {
                 Slider(
-                    value = layer.toFloat(),
-                    onValueChange = { layer = it.roundToInt().coerceIn(0, s.sy - 1) },
+                    value = sliderPosition.coerceIn(0f, (s.sy - 1).toFloat()),
+                    onValueChange = {
+                        sliderPosition = it
+                        layer = it.roundToInt().coerceIn(0, s.sy - 1)
+                    },
+                    onValueChangeFinished = { sliderPosition = layer.toFloat() },
                     valueRange = 0f..(s.sy - 1).toFloat(),
                     steps = (s.sy - 2).coerceAtLeast(0),
                     modifier = Modifier.fillMaxWidth(),
