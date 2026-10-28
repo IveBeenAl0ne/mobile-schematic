@@ -55,6 +55,11 @@ object Iso {
             cv.save()
             cv.clipPath(path)
             if (texture != null) {
+                // Bitmap pixels are tinted by Paint.color. The previous face leaves it black
+                // for the outline, which was turning every Minecraft texture into a dark blob.
+                paint.color = Color.WHITE
+                paint.alpha = 255
+                paint.style = Paint.Style.FILL
                 src.set(0, 0, texture.width, texture.height)
                 cv.drawBitmap(texture, src, RectF(left, topY, right, bottomY), paint)
                 if (shade < 1f) {
