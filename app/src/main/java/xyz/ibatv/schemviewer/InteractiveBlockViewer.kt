@@ -40,7 +40,7 @@ import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 
-private enum class BlockView(val title: String) { TOP("Top-down"), SIDE("Side"), ISO("Isometric") }
+private enum class BlockView(val title: String) { TOP("Top-down"), SIDE("Side"), ISO("Layer grid") }
 
 @Composable
 fun InteractiveBlockViewer(s: Schematic, layer: Int) {
