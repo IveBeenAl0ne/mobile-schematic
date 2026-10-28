@@ -74,6 +74,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Repo.init(applicationContext)
+        MinecraftTextures.init(applicationContext)
         setContent {
             MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
                 Surface(Modifier.fillMaxSize()) { App() }
@@ -196,7 +197,7 @@ fun Layers(s: Schematic) {
             )
         }
         item {
-            preview?.let { Image(it.asImageBitmap(), "Isometric preview up to this layer", Modifier.fillMaxWidth().aspectRatio(1f)) }
+            InteractiveBlockViewer(s, layer)
         }
         item {
             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
@@ -208,11 +209,7 @@ fun Layers(s: Schematic) {
                 Slider(layer.toFloat(), { layer = it.roundToInt() }, valueRange = 0f..(s.sy - 1).toFloat(), steps = s.sy - 2)
             }
         }
-        item {
-            Text("Place these blocks (top-down, ↑ = north), grid lines every 5", style = MaterialTheme.typography.titleSmall)
-            Spacer(Modifier.size(6.dp))
-            Plan(s, layer)
-        }
+
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(!total, { total = false }, { Text("This layer") })
