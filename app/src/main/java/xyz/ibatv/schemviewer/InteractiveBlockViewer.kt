@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -84,11 +85,11 @@ fun InteractiveBlockViewer(s: Schematic, layer: Int) {
             FilterChip(selected = false, onClick = { zoom = 1f; pan = Offset.Zero }, label = { Text("Reset") })
         }
         Box(
-            Modifier.fillMaxWidth().height(340.dp).clipToBounds()
+            Modifier.fillMaxWidth().height(340.dp).clipToBounds().graphicsLayer { clip = true }
                 .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
         ) {
             Canvas(
-                Modifier.fillMaxSize().clipToBounds()
+                Modifier.fillMaxSize().clipToBounds().graphicsLayer { clip = true }
                     .pointerInput(view, s) {
                         detectTransformGestures { _, delta, scale, _ ->
                             zoom = (zoom * scale).coerceIn(.35f, 8f)
@@ -200,7 +201,7 @@ fun InteractiveBlockViewer(s: Schematic, layer: Int) {
                                 if (image != null) {
                                     drawImage(image, dstOffset = IntOffset(left.toInt(), top.toInt()),
                                         dstSize = IntSize((right - left).toInt().coerceAtLeast(1), (bottom - top).toInt().coerceAtLeast(1)))
-                                    if (shade < 1f) drawRect(Color.Black.copy(alpha = 1f - shade), Offset(left, top), Size(right - left, bottom - top))
+                                    if (shade < 1f) drawRect(Color.Black.copy(alpha = (1f - shade) * 0.18f), Offset(left, top), Size(right - left, bottom - top))
                                 } else drawRect(fallback.copy(alpha = 1f), Offset(left, top), Size(right - left, bottom - top))
                                 drawPath(path, Color.Black.copy(alpha = .18f), style = Stroke(.7f))
                                 if (selectedFace) drawPath(path, Color(0xFFFFD54F), style = Stroke(3f))
