@@ -181,9 +181,6 @@ fun Layers(s: Schematic) {
     var layer by remember(s) { mutableIntStateOf(0) }
     var sliderPosition by remember(s) { mutableFloatStateOf(0f) }
     var total by remember(s) { mutableStateOf(false) }
-    val preview by produceState<Bitmap?>(null, s, layer) {
-        value = withContext(Dispatchers.Default) { Iso.render(s, 720, layer, layer) }
-    }
     val here = remember(s, layer) { s.materials(layer) }
     val all by produceState(emptyList<Mat>(), s) { value = withContext(Dispatchers.Default) { s.materials(null) } }
     val shown = if (total) all else here
